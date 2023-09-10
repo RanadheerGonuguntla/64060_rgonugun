@@ -1,0 +1,82 @@
+---
+title: "FML"
+author: "Randheer Gonuguntla"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+Using Credit Risk Dataset/
+Source: https://www.kaggle.com/datasets/laotse/credit-risk-dataset
+
+
+Importing Dataset
+```{r}
+Credit_Dataset<-read.csv("C:\\Users\\sidda\\Downloads\\credit_risk_dataset.csv")
+
+```
+
+Drescriptive Statistics of the data
+
+```{r}
+summary(Credit_Dataset)
+```
+
+Transforming person income variable of the dataset
+```{r}
+mean_income=mean(Credit_Dataset$person_income)
+median_income=median(Credit_Dataset$person_income)
+mode_income=mode(Credit_Dataset$person_income)
+sd_income=sd(Credit_Dataset$person_income)
+
+
+Transformed_income=(Credit_Dataset$person_income-median_income)/sd_income+ mean_income
+
+
+```
+
+Transforming loan amount
+```{r}
+New_loanAmount= (Credit_Dataset$loan_amnt)/3
+```
+
+
+Plotting person home ownership vs loan amount
+
+```{r}
+library(ggplot2)
+
+
+library(ggplot2)
+
+ggplot(Credit_Dataset) +
+ aes(x = person_home_ownership, y = loan_amnt) +
+ geom_col(fill = "#112446") +
+ theme_minimal()
+```
+Scatter plot of Loan amount and person age
+```{r}
+
+
+ggplot(Credit_Dataset) +
+ aes(x = person_age, y = loan_amnt) +
+ geom_point(shape = "circle", size = 1.5, 
+ colour = "#112446") +
+ theme_minimal()
+
+```
+
+
+Scatter plot of personal income and loan amount
+```{r}
+
+ggplot(Credit_Dataset) +
+ aes(x = person_income, y = loan_amnt) +
+ geom_point(shape = "circle", size = 1.5, 
+ colour = "#112446") +
+ theme_minimal()
+
+```
+
