@@ -1,0 +1,203 @@
+---
+title: "Assignment 2"
+author: "Randheer Gonuguntla"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+library(class)
+library(dplyr)
+library(caret)
+```
+
+Loading data set
+
+```{r}
+
+dataset_UniversalBank<-read.csv("C:/Users/sidda/Downloads/UniversalBank.csv")
+head(dataset_UniversalBank)
+```
+
+Removing unwanted columns i.e ID and Zip code
+```{r}
+dataset_UniversalBank1<-dataset_UniversalBank[,-1]
+head(dataset_UniversalBank1)
+dataset_UniversalBank1<-dataset_UniversalBank1[,-4]
+head(dataset_UniversalBank1)
+```
+
+converting personal loan as factor
+```{r}
+dataset_UniversalBank1$Personal.Loan=as.factor(dataset_UniversalBank1$Personal.Loan)
+```
+
+running is.na to check if there are any NA values
+```{r}
+head(is.na(dataset_UniversalBank1))
+any(is.na(dataset_UniversalBank1))
+```
+
+Converting categorical variable into i.e education into dummy variables \
+converting education into character
+```{r}
+
+education<-as.character(dataset_UniversalBank1$Education)
+
+dataset_UniversalBank2<-cbind(dataset_UniversalBank1[,-6],education)
+head(dataset_UniversalBank2)
+
+dummy_model<-dummyVars("~education",data = dataset_UniversalBank2)
+education_dummy<-data.frame(predict(dummy_model,dataset_UniversalBank2))
+head(education_dummy)
+
+dataset_ub_dummy<-cbind(dataset_UniversalBank2[,-12],education_dummy)
+head(dataset_ub_dummy)
+```
+
+dividing data into training and testing set
+```{r}
+set.seed(3333)
+train<-createDataPartition(dataset_ub_dummy$Personal.Loan,p=0.60,list = FALSE)
+trainset<-dataset_ub_dummy[train,]
+nrow(trainset)
+validationset<-dataset_ub_dummy[-train,]
+nrow(validationset)
+testset<-data.frame(Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2,  Mortgage = 0, Securities.Account = 0, CD.Account = 0, Online = 1, 
+      CreditCard = 1,education1 = 0, education2 = 1, education3 = 0)
+
+
+summary(trainset)
+summary(validationset)
+summary(testset)
+```
+
+Normalizing
+```{r}
+normvar<-c('Age',"Experience","Income","Family","CCAvg","Mortgage","Securities.Account","CD.Account","Online","CreditCard","education1","education2","education3")
+normalization_values<-preProcess(trainset[,normvar],method = c('center','scale'))
+
+trainset.norm<-predict(normalization_values,trainset)
+summary(trainset.norm)
+
+validationset.norm<-predict(normalization_values,validationset)
+summary(validationset.norm)
+
+testset.norm<-predict(normalization_values,testset)
+summary(testset.norm)
+```
+
+question 1: Classifying the customer
+```{r}
+set.seed(3333)
+new_grid<-expand.grid(k=c(1))
+new_model<-train(Personal.Loan~.,data=trainset.norm,method="knn",tuneGrid=new_grid)
+
+new_model
+
+predict_test<-predict(new_model,testset.norm)
+predict_test
+```
+From the above output it can be seen that the customer can be classified into two levels 0 and 1.\
+
+question 2: identifying the best k
+```{r}
+set.seed(3333)
+searchGrid <- expand.grid(k=seq(1:30))
+model<-train(Personal.Loan~.,data=trainset.norm,method="knn",tuneGrid=searchGrid)
+model
+
+plot(model$results$k,model$results$Accuracy, type = 'o')
+```
+
+finding the best k
+```{r}
+best_k <- model$bestTune[[1]]
+best_k
+```
+So the best K for the data is 1
+
+
+question3:confusion matrix
+```{r}
+library(gmodels)
+
+train_label<-trainset.norm[,7]
+validation_label<-validationset.norm[,7]
+test_label<-testset.norm[,7]
+
+predicted_validationlabel<-knn(trainset.norm,validationset.norm,cl=train_label,k=5)
+
+CrossTable(x=validation_label,y=predicted_validationlabel,prop.chisq = FALSE)
+```
+
+question4:Classifying the given customer with best k
+```{r}
+set.seed(3333)
+bestk_grid<-expand.grid(k=c(best_k))
+bestk_model<-train(Personal.Loan~.,data=trainset.norm,method="knn",tuneGrid=bestk_grid)
+bestk_model
+
+bestk_test<-predict(bestk_model,testset.norm)
+bestk_test
+```
+
+question5:confusion matrix for validation and training sets\
+dividing dataset into traning, validation and testing set
+
+```{r}
+set.seed(3333)
+train1<-createDataPartition(dataset_ub_dummy$Personal.Loan,p=0.50,list = FALSE)
+trainset_2<-dataset_ub_dummy[train1,]
+middleset<-dataset_ub_dummy[-train1,]
+nrow(middleset)
+train2<-createDataPartition(middleset$Personal.Loan,p=0.6,list = FALSE)
+validationset_2<-middleset[train2,]
+testset_2<-middleset[-train2,]
+
+nrow(trainset_2)
+nrow(validationset_2)
+nrow(testset_2)
+```
+
+normalizing trainset_2,validationset_2,testset_2
+```{r}
+normvar<-c('Age',"Experience","Income","Family","CCAvg","Mortgage","Securities.Account","CD.Account","Online","CreditCard","education1","education2","education3")
+normalization_values_2<-preProcess(trainset_2[,normvar],method = c('center','scale'))
+
+trainset.norm_2<-predict(normalization_values_2,trainset_2)
+summary(trainset.norm_2)
+
+validationset.norm_2<-predict(normalization_values_2,validationset_2)
+summary(validationset.norm_2)
+
+testset.norm_2<-predict(normalization_values_2,testset_2)
+summary(testset.norm_2)
+```
+
+confusion matrix
+```{r}
+library(gmodels)
+
+train_label_2<-trainset.norm_2[,7]
+validation_label_2<-validationset.norm_2[,7]
+test_label_2<-testset.norm_2[,7]
+
+predicted_validationlabel_2<-knn(trainset.norm_2,validationset.norm_2,cl=train_label_2,k=best_k)
+
+predicted_testlabel_2<-knn(trainset.norm_2,testset.norm_2,cl=train_label_2,k=best_k)
+
+confusionmatrix_1<-CrossTable(x=validation_label_2,y=predicted_validationlabel_2,prop.chisq = FALSE)
+confusionmatrix_2<-CrossTable(x=test_label_2,y=predicted_testlabel_2,prop.chisq = FALSE)
+
+
+validation_table<-table(validation_label_2,predicted_validationlabel_2)
+confusionMatrix(validation_table)
+
+test_table<-table(test_label_2,predicted_testlabel_2)
+confusionMatrix(test_table)
+
+```
+ When comparing the confusion matrices of the validation and testing sets, it can be seen that the validation set's accuracy and sensitivity are marginally higher than the test set's.
