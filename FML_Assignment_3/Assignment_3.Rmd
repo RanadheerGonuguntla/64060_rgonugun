@@ -1,0 +1,128 @@
+---
+title: "FML_3"
+author: "Randheer Gonuguntla"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+library(caret)
+library(e1071)
+library(ISLR)
+library(reshape2)
+#loading data set required
+data_ub<-read.csv("C:/Users/sidda/Downloads/UniversalBank.csv")
+
+```
+
+converting the variables into factor
+```{r}
+data_ub$Personal.Loan<-factor(data_ub$Personal.Loan)
+data_ub$Online<-factor(data_ub$Online)
+data_ub$CreditCard<-factor(data_ub$CreditCard)
+```
+
+
+
+
+
+
+partitioning of data into two training and validation datasets
+```{r}
+set.seed(6354)
+train<-createDataPartition(data_ub$Personal.Loan,p=0.6,list = FALSE)
+train_set<-data_ub[train,]
+validation_set<-data_ub[-train,]
+nrow(train_set)
+nrow(validation_set)
+```
+
+
+Question-A
+
+```{r}
+table_1<-xtabs(~CreditCard+Personal.Loan+Online,data=train_set)
+ftable(table_1)
+
+```
+
+Question-B
+```{r}
+46/(46+460)
+```
+
+
+Question-C
+
+```{r}
+table(Personal.Loan=train_set$Personal.Loan,
+      Online=train_set$Online)
+
+table(Personal.Loan=train_set$Personal.Loan,
+      CreditCard=train_set$CreditCard)
+
+table(Personal.Loan=train_set$Personal.Loan)
+
+
+
+```
+
+
+Question-D
+```{r}
+
+#i.P(CC = 1 | Loan = 1)
+P1=80/(80+208)
+P1
+#ii. P(Online = 1 | Loan = 1)  
+P2=179/(179+109)
+P2
+#iii. P(Loan = 1) 
+P3=288/(288+2712)
+P3
+#iv. P(CC = 1 | Loan = 0) 
+P4=779/(779+1933)
+P4
+#v. P(Online = 1 | Loan = 0) 
+P5=1599/(1599+1113)
+P5
+#vi. P(Loan = 0) 
+P6=2712/(288+2712)
+P6
+
+```
+
+
+
+Question-E\
+calculating the naive Bayes probability for P(Loan = 1 | CC = 1, Online = 1). 
+
+```{r}
+(P1*P2*P3)/((P1*P2*P3)+(P4*P5*P6))
+
+```
+
+
+
+
+
+Question-F\
+
+The probability from pivot table is 0.1005587 and the calculated naive Bayes probability is 0.1120411. Naive Bayes works on the assumption that attributes are independent of each other. this suggests that probability from the pivot table is more accurate.\
+
+Question-G
+```{r}
+Naivebayes_model<-naiveBayes(Personal.Loan~CreditCard+Online,data = train_set)
+test<-data.frame(CreditCard=1,Online=1)
+test$CreditCard<-factor(test$CreditCard)
+test$Online<-factor(test$Online)
+predict(Naivebayes_model,test,type = 'raw')
+
+```
+
+
+Probability of test data is same as the probability obtained in the question E 
+which is equal to 0.09768187. This implies that Naive bayes algorithm has predicted 
+same as that of calculated probability
