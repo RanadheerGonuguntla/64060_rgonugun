@@ -1,0 +1,116 @@
+---
+title: "Assignment_4"
+author: "Ranadheer Gonuguntla"
+output:
+  pdf_document: default
+  word_document: default
+---
+Loading the required libraries and data set
+```{r}
+library(tidyverse)
+library(factoextra)
+pharmaceutical_0data<-read.csv("C:/Users/pc/Downloads/Pharmaceuticals.csv")
+pharmaceutical_data<-na.omit(pharmaceutical_0data)
+
+```
+
+Here we’ll be using the numerical variables (1 to 9) to cluster the 21 firms.
+```{r}
+row.names(pharmaceutical_0data)<-pharmaceutical_0data[,1]
+Clustering_data<-pharmaceutical_0data[,3:11]
+```
+Scaling the data according to requirement
+```{r}
+set.seed(143)
+ScaledData<-scale(Clustering_data)
+
+```
+
+Performing Kmeans clustering for random K values(trail and error)
+```{r}
+set.seed(143)
+kmeans_2<-kmeans(ScaledData,centers = 2, nstart = 15)
+kmeans_4<-kmeans(ScaledData,centers = 4, nstart = 15)
+kmeans_8<-kmeans(ScaledData,centers = 8, nstart = 15)
+
+plot_kmeans_2<-fviz_cluster(kmeans_2,data = ScaledData) + ggtitle("K=2")
+plot_kmeans_4<-fviz_cluster(kmeans_4,data = ScaledData) + ggtitle("K=4")
+plot_kmeans_8<-fviz_cluster(kmeans_8,data = ScaledData) + ggtitle("K=8")
+
+plot_kmeans_2
+plot_kmeans_4
+plot_kmeans_8
+
+
+```
+
+to find best K suitable for clustering, we’ll use the WSS and silhouette method
+
+```{r}
+k_wss<-fviz_nbclust(ScaledData,kmeans,method="wss")
+k_silhouette<-fviz_nbclust(ScaledData,kmeans,method="silhouette")
+k_wss
+k_silhouette
+distance<-dist(ScaledData,metho='euclidean')
+fviz_dist(distance)
+```
+
+From wss K value is 2 and from silhouette k value is 5. we will be choosing 5 because this will ensure that the sum of squares is low along with proper separation within the clusters.
+Now lets Perform Kmeans to find out suitable k
+
+```{r}
+set.seed(143)
+kmeans_5<-kmeans(ScaledData,centers = 5, nstart = 10)
+kmeans_5
+plot_kmeans_5<-fviz_cluster(kmeans_5,data = ScaledData) + ggtitle("K=5")
+plot_kmeans_5
+
+Clustering_data_1<-Clustering_data%>%
+  mutate(Cluster_no=kmeans_5$cluster)%>%
+  group_by(Cluster_no)%>%summarise_all('mean')
+Clustering_data_1
+
+```
+Companies are grouped into following clusters:
+Cluster_1= ABT,AHM,AZN,BMY,LLY,NVS,SGP,WYE
+Cluster_2= BAY,CHTT,IVX
+Cluster_3=AVE,ELN,MRX,WPI
+Cluster_4=AGN,PHA
+Cluster_5=GSK,JNJ,MRK,PFE
+From the above clusters 
+1.Cluster_1 comprizes companies with moderate returns on Equity and Investment
+2.Cluster_2 Consists of Companies with Poor returns on Assets(ROA), Return on Equity (ROE), Low market Capitalization, and weak Asset turnover. This suggests that these Companies are Highly Risky 
+3.Cluster_3 Includes Companies Similar to those in cluster 2 but with Slightly lower levels of risk
+4.Cluster_4 Contains companies with very high price to earnings (P/E) ratios but extremely poor ROA and ROE, making them even riskier than those in cluster 2
+5.Cluster_5 is made up of companies with Excellent market capitalization, ROE and ROA
+
+```{r}
+Clustering_data_2<- pharmaceutical_data[,12:14] %>% mutate(Clusters=kmeans_5$cluster)
+ggplot(Clustering_data_2, mapping = aes(factor(Clusters), fill =Median_Recommendation))+geom_bar(position='dodge')+labs(x ='Clusters')
+ggplot(Clustering_data_2, mapping = aes(factor(Clusters),fill = Location))+geom_bar(position = 'dodge')+labs(x ='Clusters')
+ggplot(Clustering_data_2, mapping = aes(factor(Clusters),fill = Exchange))+geom_bar(position = 'dodge')+labs(x ='Clusters')
+
+
+```
+
+Observing the data, a clear pattern emerges in the relationship between the clusters and the 'Median Recommendation' variable. Cluster 2 tends to suggest a recommendation ranging from 'hold' to 'moderate buy,' while Cluster 3 leans toward 'moderate buy' to 'moderate sell.'
+When examining the location graph, it becomes evident that a significant proportion of pharmaceutical companies are based in the United States, and there isn't a conspicuous pattern in their distribution. However, there's no discernible pattern between clusters and the stock exchange, except for the fact that the majority of companies are listed on the New York Stock Exchange (NYSE).
+We can assign names to these clusters based on the combined criteria of net market capitalization and return on assets:
+Naming clusters:
+
+[It is done based net Market capitalization(size) and Return on Assets(money)]
+
+
+Cluster 1:High_Million
+
+
+Cluster 2: Extra Tiny_penny
+
+
+Cluster 3: Dim Sums of Money
+
+
+Cluster 4: Mid-Hundreds
+
+
+Cluster 5: Extra Large-Millions 
