@@ -1,0 +1,163 @@
+---
+title: "Assignment 5"
+author: "Ranadheer Gonuguntla"
+date: "2023-11-30"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+Loading required libraries
+
+```{r}
+library(factoextra)
+library(dendextend)
+library(cluster)
+library(tidyverse)
+library(knitr)
+
+```
+
+Importing the data
+```{r}
+
+Data_cereals = read.csv("C:\\Users\\sidda\\Downloads\\Cereals (2).csv")
+numerical_data = data.frame(Data_cereals[,4:16])
+
+```
+Removing all the missing values present in the data
+
+```{r}
+
+Data_nomissingValues = na.omit(numerical_data)
+
+```
+
+Normalizing the data
+```{r}
+Normalised_data = scale(Data_nomissingValues)
+```
+
+Measuring the distance using the euclidian distance 
+```{r}
+
+Data_distance = dist(Normalised_data, method = "euclidian")
+```
+Performing hierarchial clustering using complete linkage
+
+```{r}
+
+hierarchial_clustering = hclust(Data_distance,method = "complete")
+plot(hierarchial_clustering)
+```
+
+Rounding off the decimals
+```{r}
+round(hierarchial_clustering$height, 3)
+```
+
+
+
+
+Performing clustering using AGNES
+```{r}
+library(dendextend)
+
+HC_single = agnes(Normalised_data, method = "single")
+HC_complete = agnes(Normalised_data, method = "complete")
+HC_average = agnes(Normalised_data, method = "average")
+HC_ward = agnes(Normalised_data, method = "ward")
+```
+
+Lets Compare the agglomerative coefficients of single , complete, average, ward
+
+```{r}
+
+print(HC_single$ac)
+print(HC_complete$ac)
+print(HC_average$ac)
+print(HC_ward$ac)
+
+```
+
+from the above values, ward method is the best as it has the agglomerative coefficient value of 0.904.\
+Lets determine the optimal clusters\
+
+
+```{r}
+
+#using the ward method for hierarchial clustering
+HC_1 <- hclust(Data_distance, method = "ward.D2" )
+plot(HC_1,cex=0.6)
+rect.hclust(HC_ward,k=5, border=2:10)
+```
+
+from the above result of ward method graphs, it can be seen that the k value is considered as 5.So we would choose 5 Clusters.\
+Lets plot agnes using the ward method
+
+```{r}
+subgroup = cutree(HC_1,k=5)
+table(subgroup)
+cereals_groups <- as.data.frame(cbind(Normalised_data,subgroup))
+```
+
+Lets visualise the results on scatterplot
+```{r}
+fviz_cluster(list(data = Normalised_data, cluster = subgroup))
+```
+
+Lets find the best breakfast cereal cluster with high protein, fibre and low in sugar and sodium.\
+
+choosing the healthy cereal cluster
+```{r}
+New_cereals = numerical_data
+New_cereals_omit = na.omit(New_cereals)
+Cluster = cbind(New_cereals_omit, subgroup)
+Cluster[Cluster$subgroup==1,]
+```
+
+```{r}
+Cluster[Cluster$subgroup==2,]
+```
+
+
+```{r}
+Cluster[Cluster$subgroup==3,]
+```
+
+
+```{r}
+Cluster[Cluster$subgroup==4,]
+```
+
+
+```{r}
+Cluster[Cluster$subgroup==5,]
+```
+
+in order to determine the healthy cluster cereals, lets calculate the mean rating 
+```{r}
+mean(Cluster[Cluster$subgroup==1,"rating"])
+mean(Cluster[Cluster$subgroup==2,"rating"])
+mean(Cluster[Cluster$subgroup==3,"rating"])
+mean(Cluster[Cluster$subgroup==4,"rating"])
+mean(Cluster[Cluster$subgroup==5,"rating"])
+
+```
+
+It is clear from the figures above that subgroup 1 has the highest mean rating of 73.84446. Therefore, subgroup 1 should be selected as the cluster for the healthy diet.
+
+
+
+
+
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
